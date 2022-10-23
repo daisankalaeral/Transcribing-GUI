@@ -5,16 +5,16 @@ import tkinter.ttk as ttk
 import subprocess
 import os 
 import json
-from turtle import onclick
 import vlc
 import speech_recognition as sr
 from PIL import Image, ImageTk
 import re
 from tqdm import tqdm
-import shutil
+# import shutil
 import Levenshtein as Lev
-from ttkwidgets import CheckboxTreeview
 from datetime import datetime
+
+ffprobe_bin = "bin/" if os.path.isfile("bin/ffprobe.exe") else ""
 
 def char_distance(ref, hyp):
     ref = ref.replace(' ', '').upper()
@@ -309,9 +309,8 @@ def load_para():
                 t = ""
             now = datetime.now()
             dt = now.strftime("%d/%m/%Y %H:%M:%S")
-            
+            n_bits, sample_rate, channels, duration = get_details(active_file)
             temp = {
-
                 "path": active_file,
                 "original_text": t,
                 "ref_text": t,
@@ -320,7 +319,11 @@ def load_para():
                 "length": len(t.replace(' ', '')),
                 "cer": 0.0,
                 "datetime": dt,
-                "accepted": 1
+                "accepted": 1,
+                "n_bits": n_bits,
+                "sample_rate": sample_rate,
+                "channels": channels,
+                "duration": duration
             }
             json_data['id'][msv][filename] = temp
             json_update()
@@ -358,7 +361,7 @@ def export_segments():
     start = time.time()
     if player.get_state() == vlc.State.Playing:
         pause()
-    command = r'bin\ffmpeg -i "{}"'.format(active_file)
+    command = r'ffmpeg -i "{}"'.format(active_file)
     
     filename_without_ext = os.path.basename(os.path.splitext(active_file)[0])
     dirname = os.path.dirname(active_file) + '/' + filename_without_ext
@@ -495,9 +498,18 @@ def mmss2sec(str):
     return int(mm)*60 + float(ss)
 
 def get_duration(file):
-    p = subprocess.Popen(r'bin\ffprobe -i "{}" -show_entries format=duration'.format(file),stdout=subprocess.PIPE,stderr = subprocess.PIPE,universal_newlines=True)
+    p = subprocess.Popen(fr'{ffprobe_bin}ffprobe -i "{file}" -show_entries format=duration',stdout=subprocess.PIPE,stderr = subprocess.PIPE,universal_newlines=True)
     duration = float(p.stdout.readlines()[1].replace('duration=', ''))
     return duration
+
+def get_details(file):
+    p = subprocess.Popen(fr'{ffprobe_bin}ffprobe -i "{file}" -show_entries stream=duration,sample_rate,sample_fmt,channels,duration',stdout=subprocess.PIPE,stderr = subprocess.PIPE,universal_newlines=True)
+    stream = p.stdout.readlines()
+    n_bits = int(stream[1].replace('sample_fmt=s', ''))
+    sample_rate = int(stream[2].replace('sample_rate=', ''))
+    channels = int(stream[3].replace('channels=', ''))
+    duration = float(stream[4].replace('duration=', ''))
+    return n_bits, sample_rate, channels, duration
 
 def play_time():
     global current_time
@@ -718,8 +730,6 @@ def switch_eval(event = None, x = None):
 #     new_json = {}
 #     for sv in json_data['id']:
 #         sv_folder_path = folder_path + '/' + sv
-        
-
  
 # Shortcuts
 def bind_(widget, all_=False, modifier="", letter="", callback=None, add='',):
