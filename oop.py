@@ -9,6 +9,8 @@ import json
 import vlc
 import speech_recognition as sr
 
+ffprobe_bin = "bin/" if os.path.isfile("bin/ffprobe.exe") else ""
+
 def bind_(widget, all_=False, modifier="", letter="", callback=None, add='',):
     if modifier and letter:
         letter = "-" + letter
@@ -20,7 +22,7 @@ def bind_(widget, all_=False, modifier="", letter="", callback=None, add='',):
         widget.bind('<{}{}>'.format(modifier,letter.lower()), callback, add)
 
 def get_duration(file):
-    p = subprocess.Popen(r'bin\ffprobe -i "{}" -show_entries format=duration'.format(file),stdout=subprocess.PIPE,stderr = subprocess.PIPE,universal_newlines=True)
+    p = subprocess.Popen(fr'{ffprobe_bin}ffprobe -i "{file}" -show_entries format=duration',stdout=subprocess.PIPE,stderr = subprocess.PIPE,universal_newlines=True)
     duration = float(p.stdout.readlines()[1].replace('duration=', ''))
     return duration
 
