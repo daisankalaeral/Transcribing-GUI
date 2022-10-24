@@ -327,6 +327,7 @@ def load_para():
             }
             json_data['id'][msv][filename] = temp
             json_update()
+            switch_eval(x = 1)
         else:
             comment_text.insert(INSERT, json_data['id'][msv][filename]['comment'])
             eval = json_data['id'][msv][filename]['accepted']
