@@ -38,5 +38,7 @@ def main():
                 'duration': duration
             })
     
+    with open(args.output, 'w', encoding = 'utf-8') as file:
+        json.dump(json_data, file, indent = 4, ensure_ascii = False)
 if __name__ == '__main__':
     main()
