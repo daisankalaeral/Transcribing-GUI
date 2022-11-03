@@ -2,6 +2,7 @@ import subprocess
 import json
 import os
 import argparse
+from tqdm import tqdm
 
 ffprobe_bin = "bin/" if os.path.isfile("bin/ffprobe.exe") else ""
 
@@ -23,9 +24,12 @@ def main():
     with open(args.input, 'r', encoding = 'utf-8') as file:
         json_data = json.loads(file.read())
     
-    for id, files in json_data['id'].items():
+    for id, files in tqdm(json_data['id'].items()):
         for file in files:
             file_path = json_data['id'][id][file]['path']
+            if not os.path.isfile(file_path):
+                print(file_path)
+                continue
             n_bits, sample_rate, channels, duration = get_details(file_path)
             json_data['id'][id][file].update({
                 'n_bits': n_bits,
@@ -34,8 +38,5 @@ def main():
                 'duration': duration
             })
     
-    with open(args.output, 'w', encoding = 'utf-8') as file:
-        json.dump(json_data, file, indent = 4, ensure_ascii = False)
-
 if __name__ == '__main__':
     main()
